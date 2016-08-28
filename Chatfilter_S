@@ -1,0 +1,128 @@
+--[[
+Current function:
+Server:
+- Cancel message if characters minCharacters is not reached (default: 2)
+- Cancel message if the whole message contains any characters which are not in Basic Latin
+- Cancel message if message is contained in tChatfilter (e.g "Lag" == blocked; "omg fuck this lag noob server" == not blocked)
+- Chatfilter can be toggled by staff members only (prob needs SAUR export)
+
+Client:
+- Outputs dxDrawText to player that sent a message which was blocked
+- State reason why message was blocked
+
+]]
+
+
+--Settings
+--[[####Basic Latin (ASCII) ==
+ !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+]]
+local minCharacters = 2 -- minimum characters to cancel the message
+local minAllowedASCII = 32 -- begins with space " "
+local maxAllowedASCII = 126 -- end with "~"
+
+
+local tChatfilter = {}
+tChatfilter["Insults"] ={
+"fuck all",
+"fuck off",
+"nigger",
+"fuck you",
+"bitch",
+"noob",
+"noobs",
+"fucker",
+}
+tChatfilter["Spam"] = {
+"lag",
+"warp",
+"warp fast",
+"warp me",
+"rev",
+"revive",
+"res",
+"help",
+"bribe",
+"repair",
+"check report",
+"check my report",
+"bug",
+}
+tChatfilter["FailCommands"] = {
+"report", 
+"charges", 
+"bail",
+"gotojail",
+}
+tChatfilter["StaffCalls"] = {
+"staff",
+"staffs",
+"admin",
+"admins",
+"admen",
+"staf",
+"stafff",
+"any staff",
+"staffs?",
+"admin?",
+"admins?",
+"admen?",
+"staf?",
+"stafff?",
+"any staff?",
+"i need staff",
+"staff check my report",
+"staff check my report please",
+"admin help",
+}
+
+local isChatFilterEnabled = false -- disable Chatfilter on default (needs activation from Staff)
+--Settings end
+
+
+function Chatfilter(msg, msgtype)
+--local account = getPlayerAccount(source)
+--local accountName = getAccountName(account)
+if isChatFilterEnabled == false then return end
+--if isObjectInACLGroup("user."..accountName,aclGetGroup("Admin")) or isObjectInACLGroup("user."..accountName,aclGetGroup("Moderator")) or isObjectInACLGroup("user."..accountName,aclGetGroup("SuperModerator"))then return false end
+	if msgtype == 0 then -- Check if msg was in mainchat
+	--if msg =="ok" or msg == "hi" then return false end
+		if string.len(msg) <= minCharacters then 
+			cancelEvent()
+			triggerClientEvent(source,"onCFWarnMSG",source, "short")		 	 
+		else
+			for i=1,string.len(msg) do -- loop through the message and check for nonenglish characters in each string.byte
+				local checkNE = string.byte(msg,i)
+				if checkNE < minAllowedASCII or checkNE > maxAllowedASCII then	-- if outside of Basic Latin 
+					cancelEvent()
+					triggerClientEvent(source,"onCFWarnMSG",source, "nonEng")					 
+				end	
+			end
+		end
+		for i,v in pairs(tChatfilter) do -- loop through tChatfilter to get category names
+			for k,j in pairs (tChatfilter[i]) do -- loop through tChatfilter[category names] to get blocked words
+				if string.lower(msg)== j then -- lowercase the msg to match with blocked words
+					--outputDebugString(j)
+					cancelEvent()
+					triggerClientEvent(source,"onCFWarnMSG",source, i,msg)	-- pass category i to client			
+				end
+			end
+		end	
+
+	end -- end if mainchat
+end -- function
+
+addEventHandler("onPlayerChat",root,Chatfilter)
+
+function EnableCF(plr)
+local Staffname = getPlayerName(plr)
+-- if plr == Staff then (needs SAUR if statement to check if STAFF)
+	if isChatFilterEnabled == false then
+		isChatFilterEnabled = true
+		outputChatBox("#01DF01[CHATFILTER] has been activated by "..Staffname,root,255,255,255,true)
+	elseif isChatFilterEnabled == true then
+		isChatFilterEnabled = false
+		outputChatBox("#FF0000[CHATFILTER] has been deactivated by "..Staffname,root,255,255,255,true)
+	end	
+end
+addCommandHandler("chatfilter",EnableCF)
