@@ -1,0 +1,45 @@
+local screenW, screenH = guiGetScreenSize()
+local x,y,rx,ry = screenW * 0.1, screenH * 0.5, screenW * 0.1, screenH * 0.5
+local isCFdrawing 
+local drawTimer
+local displayTime = 3000 -- in ms
+local tWarnType = {}
+local blockedMsg = {}
+
+function showCFMsg()
+	if tWarnType[1] == "short" then
+		dxDrawText("#FF0000[CHATFILTER]#FFFFFF Message was too short!", x,y,rx,ry, tocolor(255, 255, 255, 255), 1.30, "clear", "center", "top", false, false, false, true, false)
+	elseif tWarnType[1] == "nonEng" then
+		dxDrawText("#FF0000[CHATFILTER]#FFFFFF Nonenglish characters detected!", x,y,rx,ry, tocolor(255, 255, 255, 255), 1.30, "clear", "center", "top", false, false, false, true, false)
+	elseif tWarnType[1] == "StaffCalls" then
+		dxDrawText("#FF0000[CHATFILTER]#FFFFFF Contact a staff via SMS/PM !", x,y,rx,ry, tocolor(255, 255, 255, 255), 1.30, "clear", "center", "top", false, false, false, true, false)
+	elseif tWarnType[1] == "Insults" then
+		dxDrawText("#FF0000[CHATFILTER]#FFFFFF Inappropriate message detected!", x,y,rx,ry, tocolor(255, 255, 255, 255), 1.30, "clear", "center", "top", false, false, false, true, false)
+	elseif tWarnType[1] == "Spam" then
+		dxDrawText("#FF0000[CHATFILTER]#FFFFFF Spam detected! (\""..blockedMsg[1].."\")", x,y,rx,ry, tocolor(255, 255, 255, 255), 1.30, "center", "left", "top", false, false, false, true, false)	
+	elseif tWarnType[1] == "FailCommands" then
+		dxDrawText("#FF0000[CHATFILTER]#FFFFFF Wrong command detected! (/command)", x,y,rx,ry, tocolor(255, 255, 255, 255), 1.30, "clear", "center", "top", false, false, false, true, false)	
+	end
+end
+
+function setupCFMsg(warntype,msg)
+	if isCFdrawing == true then return end
+	isCFdrawing = true
+	tWarnType[1] = warntype
+	blockedMsg[1] = msg
+	local errorSound = playSoundFrontEnd ( 49 )
+		addEventHandler("onClientRender",root,showCFMsg)
+			if drawTimer and isTimer(drawTimer) then
+				killTimer(drawTimer)
+			end
+			drawTimer = setTimer(function() 
+			isCFdrawing = false
+			tWarnType = {} -- clear table after removing the dxText
+			blockedMsg = {}
+			removeEventHandler("onClientRender", root, showCFMsg) 
+			end, displayTime, 1)
+	return 
+end
+
+addEvent("onCFWarnMSG",true)
+addEventHandler("onCFWarnMSG",localPlayer,setupCFMsg)	
