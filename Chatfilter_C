@@ -1,5 +1,5 @@
 local screenW, screenH = guiGetScreenSize()
-local x,y,rx,ry = screenW * 0.1, screenH * 0.5, screenW * 0.1, screenH * 0.5
+local x,y,rx,ry = screenW * 0.5, screenH * 0.95, screenW * 0.5, screenH * 0.95
 local isCFdrawing 
 local drawTimer
 local displayTime = 3000 -- in ms
